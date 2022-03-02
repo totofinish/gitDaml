@@ -1,0 +1,25 @@
+module Main.DataTypes where
+
+import DA.Time
+
+data EmployeeDetails = EmployeeDetails
+  with  
+    id: Int
+    age: Int
+    name: Text
+    dept: Text
+  deriving (Eq)
+
+
+dataRecordsTest : Scenario Bool
+dataRecordsTest = scenario do
+  let 
+    e1 = EmployeeDetails with id=1; age=44; name="avi"; dept="RnD"
+    e2 = EmployeeDetails with id=2; age=37; name="cohen"; dept="Test"
+    e3 = EmployeeDetails with id=2; age=37; name="cohen"; dept="Test"
+    
+
+  assert (e1 /= e2)
+  assert (e2 == e3)
+
+  return True

@@ -1,0 +1,144 @@
+module Main.Rent where
+
+import DA.Date
+import DA.Time
+import DA.List
+
+data EmployeeDetails = EmployeeDetails
+  with  
+    id: Int
+    name: Text
+    dept: Text
+
+template RentFinal 
+  with 
+    landlord : Party
+    tenant: Party
+    terms: Text  
+  where
+    signatory landlord, tenant
+
+
+template RentAgreement
+  with
+    landlord : Party
+    tenant: Party
+    terms: Text  
+  where
+    signatory landlord, tenant
+
+    controller tenant can
+      FinalizeRent: ContractId RentFinal
+        do
+          create RentFinal with ..
+
+    controller landlord can
+      RevokeAgreement: ()
+        do
+          return ( )
+
+
+template RentProposal
+  with 
+    landlord: Party
+    tenant: Party
+    terms: Text
+    regulator: Party
+  where
+    signatory landlord
+    observer regulator
+
+    controller tenant can
+      AcceptProposal: ContractId RentAgreement
+        do
+          create RentAgreement with ..
+          
+      RejectProposal: ContractId RentRejection
+        with  
+          rejectReason: Text
+        do  
+          create RentRejection with landlord, tenant, terms, rejectReason
+
+    controller landlord can
+      RevokeProposal: ()
+        do
+          return ()
+
+template RentRejection 
+  with
+    landlord: Party
+    tenant: Party
+    terms: Text
+    rejectReason: Text
+  where
+    signatory tenant, landlord 
+
+rentTst : Scenario ()
+rentTst = scenario do 
+  landlord <- getParty "Avi"
+  tenant <- getParty "Doron"
+  avi <- getParty "Regulator"
+
+  rentProposalCid <- submit landlord do 
+    create RentProposal with terms="some terms", regulator=avi, ..
+
+  rentAgreementCid <- submit tenant do  
+    exercise rentProposalCid AcceptProposal
+
+  rentAgreement <- submit tenant do
+     fetch rentAgreementCid
+
+  debug rentAgreement
+  assert (rentAgreement.terms == "some terms")
+
+  assert True
+
+
+rentTest2 : Scenario ()
+rentTest2 = scenario do
+  landlord <- getParty "landlord"
+  tenant <- getParty "tenant"
+  avi <- getParty "regulator"
+
+  proposalCid <- submit landlord do 
+    create RentProposal with terms="Some Text", regulator=avi,..
+
+  rentAgreeCid <- submit tenant do  
+    exercise proposalCid AcceptProposal
+
+  submit tenant do
+    exercise rentAgreeCid FinalizeRent
+
+  let 
+    my_int = -123
+    my_dec:Decimal = 0.001
+    my_date = date 2020 Jan 01
+    my_time = time my_date 0 0 0  
+    rel_time = hours 24
+    my_text = "Alice"
+    a = ([1,2,3], "list")
+
+  assert (not (landlord == tenant))
+  assert (landlord /= tenant)
+  assert (my_dec * 1000.0 == 1.0)
+  assert (my_text == "Alice")
+  assert (time (addDays my_date 1) 0 0 0 == addRelTime my_time rel_time)
+  assert (time my_date 24 0 0 == addRelTime my_time rel_time)  
+  debug (fst a)
+
+  let
+    lista = [1,2,3,4,5]
+
+  debug (head lista)
+  debug (last lista)
+  debug (tail lista)
+  debug (init lista)
+  debug (lista!!0)
+  debug (show (head lista) <> show (tail lista))
+  debug [1..10]
+  debug [5,4..1]
+  -- submit landlord do  
+  --   archive proposalCid
+    -- exercise proposalCid Archive
+     
+  pure()

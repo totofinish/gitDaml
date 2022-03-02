@@ -1,0 +1,22 @@
+module Test.RentTest where
+
+import Main.Rent
+
+rentTst : Scenario ()
+rentTst = scenario do 
+  landlord <- getParty "Avi"
+  tenant <- getParty "Doron"
+
+  rentProposalCid <- submit landlord do 
+    create RentProposal with terms="some terms", ..
+
+  rentAgreementCid <- submit tenant do  
+    exercise rentProposalCid AcceptProposal
+
+  rentAgreement <- submit tenant do
+     fetch rentAgreementCid
+
+  debug rentAgreement
+  assert (rentAgreement.terms == "some terms")
+
+  assert True
